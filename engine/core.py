@@ -1,0 +1,91 @@
+#!/usr/bin/python3
+
+import argparse
+import itertools
+import threading
+import sys
+import zmq
+
+import wikimap
+
+class Server:
+	def source_routine(wm, url='tcp://*:5555', context=None):
+		context = context or zmq.Context()
+		source = context.socket(zmq.REP)
+		source.bind(url)
+		try:
+			sys.stdout.write('Source socket ready !\n')
+			for i in itertools.count():
+				# Select random page
+				idx = wikimap.tools.get_waiting(wm)
+				wp  = wm.data.get(idx)
+				if not wp is None:
+					# Wait for signal
+					_ = source.recv()
+					# Send job details
+					source.send_pyobj({
+						# 'idx': idx,
+						'frg': wp.fragment,
+						'url': wm.domain + wp.fragment
+					})
+				else:
+					sys.stdout.write('No work to provide\n')
+					time.sleep(1)
+		except zmq.error.ContextTerminated:
+			pass
+
+	def sink_routine(wm, url='tcp://*:5556', context=None, verbose=False):
+		context = context or zmq.Context()
+		sink = context.socket(zmq.PULL)
+		sink.bind('tcp://*:5556')
+		try:
+			sys.stdout.write('Sink socket ready !\n')
+			offset = len(wm.data) - len(wm.pend) + 1
+			for i in itertools.count(start=offset):
+				# Receive and process report
+				wp = wikimap.tools.job_ingest(wm, sink.recv_pyobj())
+				if verbose:
+					sys.stdout.write('[{}] processed {}: {} links found\n'.format(i, wp.readable, len(wp.links)))
+				# Every now and then, save the database
+				if not args.discard and i % args.step == 0:
+					wikimap.tools.db_save(wm, file=args.db, verbose=True)
+		except zmq.error.ContextTerminated:
+			pass
+
+
+if __name__ == '__main__':
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-m', '--mode',   type=str, choices=['load', 'init'], default='load')
+	parser.add_argument(      '--db',     type=str,                           default='db.pkl')
+	parser.add_argument(      '--step',   type=int,                           default=10000)
+	parser.add_argument(      '--domain', type=str,                           default='https://fr.wikipedia.org/wiki/')
+	parser.add_argument(      '--source', type=str,                           default='tcp://*:5555')
+	parser.add_argument(      '--sink',   type=str,                           default='tcp://*:5556')
+	parser.add_argument(      '--discard', action='store_true')
+	args = parser.parse_args()
+
+	context = zmq.Context()
+
+	if args.mode == 'load':
+		wm = wikimap.tools.db_load(file=args.db, verbose=True)
+	else:
+		wm = wm(domain=args.domain)
+
+	sys.stdout.write('{:-^40}\n'.format(''))
+	wikimap.tools.db_show(wm)
+	sys.stdout.write('{:-^40}\n'.format(''))
+
+	try:
+		thread = threading.Thread(target=Server.source_routine, args=(wm, args.source, context))
+		thread.start()
+		Server.sink_routine(wm, args.sink, context=context, verbose=True)
+
+	except KeyboardInterrupt:
+		sys.stdout.write('\n{:-^40}\n'.format(' Interrupted '))
+
+	finally:
+		context.term()
+		wikimap.tools.db_show(wm)
+		if not args.discard:
+			wikimap.tools.db_save(wm, file=args.db, verbose=True)
