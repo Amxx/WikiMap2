@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-
 import wikimap
 
 if __name__ == '__main__':
@@ -11,8 +10,8 @@ if __name__ == '__main__':
 	parser.add_argument('--db',  type=str, default='db.pkl')
 	args = parser.parse_args()
 
-	wm = wikimap.tools.db_load(file=args.db, verbose=True)
-	wikimap.tools.db_show(wm)
+	wm = wikimap.io.load(file=args.db, verbose=True)
+	wikimap.io.show(wm)
 
 	assert(len(wm.idxs) == len(wm.data))
 
@@ -21,7 +20,7 @@ if __name__ == '__main__':
 			print('IDX ERROR\n{}\n{}\n{}'.format(idx, wm.idxs[wp.fragment], wp.fragment))
 			exit(1)
 
-		frg = wikimap.tools.quote(wp.readable)
+		frg = wikimap.quote(wp.readable)
 		if not frg == wp.fragment:
 			print('QUOTE ERROR @ {}\n{}\n{}'.format(idx, wp.fragment, frg))
 			exit(1)

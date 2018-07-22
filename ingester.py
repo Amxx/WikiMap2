@@ -3,9 +3,8 @@
 import argparse
 import itertools
 import sys
-import zmq
-
 import wikimap
+import zmq
 
 if __name__ == '__main__':
 
@@ -40,15 +39,15 @@ if __name__ == '__main__':
 				sys.stdout.write('[{}] New job: '.format(i))
 				sys.stdout.flush()
 				# Process
-				job = wikimap.tools.job_process(job, verbose=True)
+				job = wikimap.job.process(job, verbose=True)
 				# Send result
 				sink.send_pyobj(job)
 
 		elif args.mode == 'master' and args.fragment:
 			# Define & process job
 			# frg = args.fragment
-			frg = wikimap.tools.quote(args.fragment)
-			job = wikimap.tools.job_process({ 'frg': frg, 'url': args.domain+frg }, verbose=True)
+			frg = wikimap.quote(args.fragment)
+			job = wikimap.job.process({ 'frg': frg, 'url': args.domain+frg }, verbose=True)
 			# Send result
 			sink.send_pyobj(job)
 

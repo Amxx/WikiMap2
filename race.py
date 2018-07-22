@@ -3,7 +3,6 @@
 import argparse
 import itertools
 import sys
-
 import wikimap
 
 if __name__ == '__main__':
@@ -15,21 +14,21 @@ if __name__ == '__main__':
 
 	sys.stdout.write('loading database ... ')
 	sys.stdout.flush()
-	wm = wikimap.tools.db_load(file=args.db)
+	wm = wikimap.io.load(file=args.db)
 	sys.stdout.write('done\n')
 	sys.stdout.write('{:-^40}\n'.format(''))
 
 	sys.stdout.write('Details:\n')
-	wikimap.tools.db_show(wm)
+	wikimap.io.show(wm)
 	sys.stdout.write('{:-^40}\n'.format(''))
 
 	sys.stdout.write('Looking for route: {} → {}\n'.format(*args.query))
 	sys.stdout.write('{:-^40}\n'.format(''))
 
-	frgsrc = wikimap.tools.quote(args.query[0])
-	frgtrg = wikimap.tools.quote(args.query[1])
+	frgsrc = wikimap.quote(args.query[0])
+	frgtrg = wikimap.quote(args.query[1])
 
-	path = wikimap.tools.find_route(wm, frgsrc, frgtrg)
+	path = wikimap.traversal.find_route(wm, frgsrc, frgtrg)
 	if path:
 		for i, wp in zip(itertools.count(), path):
 			sys.stdout.write('{: 5d} {}\n'.format(i, wp.readable))

@@ -1,1 +1,2 @@
 db.pkl filter=lfs diff=lfs merge=lfs -text
+db-fr.pkl filter=lfs diff=lfs merge=lfs -text

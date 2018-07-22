@@ -4,9 +4,9 @@ import argparse
 import itertools
 import threading
 import sys
-import zmq
-
+import time
 import wikimap
+import zmq
 
 class Server:
 	def source_routine(wm, url='tcp://*:5555', context=None):
@@ -15,9 +15,9 @@ class Server:
 		source.bind(url)
 		try:
 			sys.stdout.write('Source socket ready !\n')
-			for i in itertools.count():
+			for i in range(args.limit) if args.limit else itertools.count():
 				# Select random page
-				idx = wikimap.tools.get_waiting(wm)
+				idx = wikimap.accessor.get_waiting(wm)
 				wp  = wm.data.get(idx)
 				if not wp is None:
 					# Wait for signal
@@ -43,12 +43,12 @@ class Server:
 			offset = len(wm.data) - len(wm.pend) + 1
 			for i in itertools.count(start=offset):
 				# Receive and process report
-				wp = wikimap.tools.job_ingest(wm, sink.recv_pyobj())
+				wp = wikimap.job.ingest(wm, sink.recv_pyobj())
 				if verbose:
 					sys.stdout.write('[{}] processed {}: {} links found\n'.format(i, wp.readable, len(wp.links)))
 				# Every now and then, save the database
 				if not args.discard and i % args.step == 0:
-					wikimap.tools.db_save(wm, file=args.db, verbose=True)
+					wikimap.io.save(wm, file=args.db, verbose=True)
 		except zmq.error.ContextTerminated:
 			pass
 
@@ -62,18 +62,19 @@ if __name__ == '__main__':
 	parser.add_argument(      '--domain', type=str,                           default='https://fr.wikipedia.org/wiki/')
 	parser.add_argument(      '--source', type=str,                           default='tcp://*:5555')
 	parser.add_argument(      '--sink',   type=str,                           default='tcp://*:5556')
+	parser.add_argument(      '--limit',  type=int,                           default=None)
 	parser.add_argument(      '--discard', action='store_true')
 	args = parser.parse_args()
 
 	context = zmq.Context()
 
 	if args.mode == 'load':
-		wm = wikimap.tools.db_load(file=args.db, verbose=True)
+		wm = wikimap.io.load(file=args.db, verbose=True)
 	else:
-		wm = wm(domain=args.domain)
+		wm = wikimap.WikiMap(domain=args.domain)
 
 	sys.stdout.write('{:-^40}\n'.format(''))
-	wikimap.tools.db_show(wm)
+	wikimap.io.show(wm)
 	sys.stdout.write('{:-^40}\n'.format(''))
 
 	try:
@@ -86,6 +87,6 @@ if __name__ == '__main__':
 
 	finally:
 		context.term()
-		wikimap.tools.db_show(wm)
+		wikimap.io.show(wm)
 		if not args.discard:
-			wikimap.tools.db_save(wm, file=args.db, verbose=True)
+			wikimap.io.save(wm, file=args.db, verbose=True)

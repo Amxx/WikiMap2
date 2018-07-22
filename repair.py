@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-
 import wikimap
 
 def print_wp_from_idx(wm, idx):
@@ -18,7 +17,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 
-	wm = wikimap.tools.db_load(file=args.db, verbose=True)
+	wm = wikimap.io.load(file=args.db, verbose=True)
 
 	wm.idxs['%C3%89mile_Bergeon'] = 1571247
 	wm.data[1571247] = wikimap.WikiPage(fragment='%C3%89mile_Bergeon')
@@ -43,6 +42,6 @@ if __name__ == '__main__':
 	# 		print(i)
 
 
-	# wikimap.tools.db_save(wm, file=args.db, verbose=True)
+	# wikimap.io.save(wm, file=args.db, verbose=True)
 
 	print('done')
