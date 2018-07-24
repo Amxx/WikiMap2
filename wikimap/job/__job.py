@@ -6,7 +6,7 @@ import urllib.request
 import sys
 import xml.dom.minidom
 
-from .accessor import get_index
+from ..accessor import get_index
 
 regexp = re.compile('^/wiki/([^:#]*)(#.*)?$')
 

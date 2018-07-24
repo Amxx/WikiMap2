@@ -5,7 +5,7 @@ import urllib.parse
 import sys
 import xml.dom.minidom
 
-from .WikiPage import WikiPage
+from ..WikiPage import WikiPage
 
 def quote(url):
 	return urllib.parse.quote(url, safe='!$()*,/;@~')

@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import collections
+import sys
 
-from .accessor import get_index
-from .job      import process, ingest
+from ..accessor import get_index
+from ..job      import process, ingest
 
 def dijkstra(wm, src, trg):
 	route = dict()
